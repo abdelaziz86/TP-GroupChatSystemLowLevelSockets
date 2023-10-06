@@ -1,23 +1,28 @@
 package Server;
 import java.io.*;
 import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class Server {
-    public static void main(String[] args) throws IOException {
-        System.out.println("Server is Running");
-        ServerSocket mysocket = new ServerSocket(5555);
+    private static final int PORT = 5555;
 
-        while (true) {
-            // Accept a client connection
-            Socket connectionSocket = mysocket.accept();
-            System.out.println("Accepted connection from client.");
 
-            // Create a new thread to handle the client
-            ClientHandler clientHandler = new ClientHandler(connectionSocket);
+    public static void main(String[] args) {
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            System.out.println("Server is running on port " + PORT);
 
-            // Start the thread
-            Thread clientThread = new Thread(clientHandler);
-            clientThread.start();
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("New connection from " + clientSocket.getInetAddress().getHostAddress());
+
+                // Create a new thread to handle the client
+                new Thread(new ClientHandler(clientSocket)).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
+
+
 }

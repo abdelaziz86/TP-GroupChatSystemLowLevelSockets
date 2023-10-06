@@ -16,8 +16,8 @@ public class mychat {
     public mychat(String l) {
         login = l;
 
-        JFrame f = new JFrame("My Chat");
-        f.setSize(400, 400);
+        JFrame f = new JFrame(login);
+        f.setSize(600, 600);
 
         JPanel p1 = new JPanel();
         p1.setLayout(new BorderLayout());
@@ -76,7 +76,7 @@ public class mychat {
 
     private void sendMessage(String message) {
         try {
-            String formattedMessage = message;
+            String formattedMessage = "/broadcast " + login +" : " + message; // Prepend "/broadcast" to indicate broadcasting
             writer.write(formattedMessage);
             writer.write("\r\n");
             writer.flush();
@@ -86,12 +86,6 @@ public class mychat {
         }
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new mychat("Imed");
-            }
-        });
-    }
+
+
 }

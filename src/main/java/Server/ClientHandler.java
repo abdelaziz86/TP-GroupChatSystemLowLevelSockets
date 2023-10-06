@@ -1,40 +1,52 @@
 package Server;
+
 import java.io.*;
 import java.net.*;
-public class ClientHandler implements Runnable {
-    private Socket connectionSocket;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-    public ClientHandler(Socket socket) {
-        this.connectionSocket = socket;
+public class ClientHandler implements Runnable {
+    private static final Map<Socket, BufferedWriter> clientWriters = new ConcurrentHashMap<>();
+    private Socket clientSocket;
+    private BufferedReader reader;
+
+    public ClientHandler(Socket clientSocket) throws IOException {
+        this.clientSocket = clientSocket;
+        reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        clientWriters.put(clientSocket, new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream())));
     }
 
     @Override
     public void run() {
         try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(connectionSocket.getOutputStream()));
-
-            writer.write("*** Welcome to the Calculation Server (Addition Only) ***\r\n");
-            writer.write("*** Please type in the first number and press Enter : \n");
-            writer.flush();
-
-            String data1 = reader.readLine().trim();
-            writer.write("*** Please type in the second number and press Enter :\n");
-            writer.flush();
-
-            String data2 = reader.readLine().trim();
-            int num1 = Integer.parseInt(data1);
-            int num2 = Integer.parseInt(data2);
-            int result = num1 + num2;
-
-            System.out.println("Addition operation done ");
-            writer.write("\r\n=== Result is : \n" + result + "\n");
-            writer.flush();
-
-            // Close the connectionSocket
-            connectionSocket.close();
+            String message;
+            while ((message = reader.readLine()) != null) {
+                if (message.startsWith("/broadcast ")) {
+                    broadcastMessage(message.substring("/broadcast ".length()));
+                } else {
+                    System.out.println("Received message: " + message);
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void broadcastMessage(String message) {
+        for (Socket client : clientWriters.keySet()) {
+            try {
+                BufferedWriter writer = clientWriters.get(client);
+                writer.write(message + "\r\n");
+                writer.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
